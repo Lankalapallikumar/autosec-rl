@@ -1,0 +1,8 @@
+name: autosec-rl
+description: Adaptive cybersecurity RL environment
+entrypoint: env.py
+
+tasks:
+  - easy
+  - medium
+  - hard
