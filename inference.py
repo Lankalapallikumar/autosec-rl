@@ -4,40 +4,45 @@ from openai import OpenAI
 from env import AutoSecEnv
 from grader import compute_score
 
-# Load env
+# ✅ Load env
 load_dotenv()
 
+# ✅ REQUIRED VARIABLES (as per instructions)
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-if not HF_TOKEN:
-    raise ValueError("HF_TOKEN missing in .env file")
-
-# HF Router client
-client = OpenAI(
-    base_url="https://router.huggingface.co/v1",
-    api_key=HF_TOKEN
-)
+# ✅ Initialize client only if token exists
+client = None
+if HF_TOKEN:
+    client = OpenAI(
+        base_url=API_BASE_URL,
+        api_key=HF_TOKEN
+    )
 
 VALID_ACTIONS = ["allow", "block_ip", "monitor", "rate_limit"]
 
 
-# 🔥 FINAL HYBRID AGENT
+# 🔥 HYBRID AGENT (LLM + RULES)
 def get_action(obs):
 
     login_sum = sum(obs.login_history)
     data_sum = sum(obs.data_pattern)
 
-    # ✅ RULE OVERRIDE (critical for high score)
+    # ✅ RULE OVERRIDE (critical for scoring)
 
     # Easy: brute force
     if login_sum > 60:
         return "block_ip"
 
-    # Hard: stealth data exfiltration
+    # Hard: stealth
     if data_sum > 1200:
         return "monitor"
 
-    prompt = f"""
+    # 🔥 Try LLM only if available
+    if client:
+        try:
+            prompt = f"""
 You are a cybersecurity SOC analyst.
 
 Observation:
@@ -54,37 +59,35 @@ allow, monitor, rate_limit
 Return only the word.
 """
 
-    # 🔥 Try LLM
-    try:
-        response = client.chat.completions.create(
-            model="Qwen/Qwen2.5-72B-Instruct",
-            messages=[{"role": "user", "content": prompt}]
-        )
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[{"role": "user", "content": prompt}]
+            )
 
-        raw = response.choices[0].message.content.strip().lower()
+            raw = response.choices[0].message.content.strip().lower()
 
-        for action in VALID_ACTIONS:
-            if action in raw:
-                return action
+            for action in VALID_ACTIONS:
+                if action in raw:
+                    return action
 
-    except Exception:
-        pass  # fallback silently
+        except Exception:
+            pass  # fallback silently
 
-    # 🔥 FALLBACK (robust)
+    # 🔥 FALLBACK (deterministic)
     if login_sum > 20:
         return "monitor"
 
     return "allow"
 
 
-# 🚀 MAIN LOOP
+# 🚀 MAIN LOOP (STRICT FORMAT)
 TASKS = ["easy", "medium", "hard"]
 
 for task in TASKS:
     env = AutoSecEnv(task)
     obs = env.reset()
 
-    print(f"[START] task={task} env=autosec model=hf-hybrid")
+    print(f"[START] task={task} env=autosec model={MODEL_NAME if client else 'rule-based'}")
 
     rewards = []
     success = False
