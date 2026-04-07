@@ -1,17 +1,20 @@
 [project]
 name = "autosec-rl"
 version = "0.1.0"
-description = "Adaptive Cybersecurity RL Environment using OpenEnv"
-authors = [
-    {name = "Kumar"}
-]
+description = "Adaptive Cybersecurity RL Environment"
+authors = [{name = "Kumar"}]
+
 dependencies = [
     "fastapi",
     "uvicorn",
     "pydantic",
     "python-dotenv",
-    "openai"
+    "openai",
+    "openenv>=0.2.0"
 ]
+
+[project.scripts]
+server = "server.app:main"
 
 [build-system]
 requires = ["setuptools", "wheel"]
