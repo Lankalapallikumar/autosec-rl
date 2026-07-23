@@ -5,8 +5,6 @@ import uvicorn
 app = FastAPI()
 
 env_instance = None
-
-
 # ✅ Root endpoint
 @app.get("/")
 def home():
