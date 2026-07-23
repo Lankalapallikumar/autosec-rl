@@ -189,5 +189,4 @@ AutoSec-RL provides a realistic benchmark for evaluating intelligent agents in c
 ---
 
 ## 👤 Author
-
 Developed for Meta PyTorch OpenEnv Hackathon.
