@@ -1,7 +1,6 @@
 import random
 from models import Observation
 from tasks import get_task_config
-
 class AutoSecEnv:
 
     def __init__(self, task, max_steps=8):
